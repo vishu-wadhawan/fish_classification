@@ -1,0 +1,400 @@
+---
+title: "Explatory Data Analysis - Fish Sonar"
+author: "Vishu Wadhawan"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = FALSE, include = FALSE)
+```
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+#' First load the data set
+
+  fish_sonar <- read.table("\\Users\\vishu\\OneDrive\\Desktop\\STA 2453\\FishTetherExperiment\\ProcessedData\\processed_AnalysisData.csv", header = TRUE, sep = ",", row.names = NULL)
+  
+  
+#' first lets keep all the features associated with frequencies and remove the rest of the variables
+#' however, we will keep the 'species' column and 'fishnum' so that we can differentiate between individuals fishes
+ 
+  fish_sonar <- fish_sonar[,c(1,5,59:484)]
+  
+#" because this is a classification model, we are assuming that the three fish species are completely independent of each so lets make three different data sets with each one corresponding to a different fish,
+```
+
+
+
+```{r setup, include=FALSE}
+
+library(dplyr)
+  
+  trout_data <- fish_sonar %>%
+    filter(species == 'lakeTrout')
+  
+  whitefish_data <- fish_sonar %>%
+    filter(species == 'lakeWhitefish')
+  
+  bass_data <- fish_sonar %>%
+    filter(species == 'smallmouthBass')
+```
+
+
+```{r setup, include=FALSE}
+
+#' lets calculate the mean for trout data 
+  trout_data_mean <- trout_data %>%
+    group_by(fishNum) %>%  
+    summarise(across(where(is.numeric), ~mean(.x, na.rm = FALSE)))
+  
+  trout_data_mean <-trout_data_mean[,-c(1)]
+  trout_data_mean <- data.frame((t(trout_data_mean)))
+  
+  trout_data_mean$Average_Freq <- rowMeans((trout_data_mean), na.rm = TRUE)
+  trout_data_mean$Frequency <- c(seq(45,170,by = 0.5),seq(173,260,by=0.5))
+  
+```
+
+
+```{r setup, include=FALSE}
+
+#' lets calculate the mean for lakewhitefish data 
+  
+  whitefish_data_mean <- whitefish_data %>%
+    group_by(fishNum) %>%  
+    summarise(across(where(is.numeric), ~mean(.x, na.rm = FALSE)))
+  
+  whitefish_data_mean <- whitefish_data_mean[,-c(1)]
+  whitefish_data_mean <- data.frame((t(whitefish_data_mean)))
+  
+  whitefish_data_mean$Average_Freq <- rowMeans((whitefish_data_mean), na.rm = TRUE)
+  whitefish_data_mean$Frequency <- c(seq(45,170,by = 0.5),seq(173,260,by=0.5))
+
+```
+
+
+
+```{r include=FALSE}
+  
+#' lets calculate the mean for bass mouth data
+
+  bass_data_mean <- bass_data %>%
+    group_by(fishNum) %>%  
+    summarise(across(where(is.numeric), ~mean(.x, na.rm = FALSE)))
+  
+  bass_data_mean <- bass_data_mean[,-c(1)]
+  bass_data_mean <- data.frame((t(bass_data_mean)))
+  
+  bass_data_mean$Average_Freq <- rowMeans((bass_data_mean), na.rm = TRUE)
+  bass_data_mean$Frequency <- c(seq(45,170,by = 0.5),seq(173,260,by=0.5))
+  
+```
+
+
+
+```{r setup, include=FALSE}
+#' create 9 plots for trout mean
+
+  library(ggplot2)
+  library(patchwork)
+
+  p1 <- ggplot(data = trout_data_mean[1:50,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F45 to F69.5 (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  p2 <- ggplot(data = trout_data_mean[51:100,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F70 to F94.5  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  p3 <- ggplot(data = trout_data_mean[101:150,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F95 to F119.5  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  p4 <- ggplot(data = trout_data_mean[151:200,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F120 to F144.5  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  p5 <- ggplot(data = trout_data_mean[201:250,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F145 to F169.5  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  p6 <- ggplot(data = trout_data_mean[251:300,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F170 to F197  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  p7 <- ggplot(data = trout_data_mean[301:350,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F197.5 to F222  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  p8 <- ggplot(data = trout_data_mean[351:400,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) + 
+  labs(title = 'F222.5 to F247  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  p9 <- ggplot(data = trout_data_mean[401:426,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F247.5 to F260  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+```
+
+```{r include=FALSE}
+
+  lw1 <- ggplot(data = whitefish_data_mean[1:50,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F45 to F69.5 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+
+  lw2 <- ggplot(data = whitefish_data_mean[51:100,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F70 to F94.5 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  lw3 <- ggplot(data = whitefish_data_mean[101:150,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F95 to F119.5 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  lw4 <- ggplot(data = whitefish_data_mean[151:200,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F120 to F144.5 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  lw5 <- ggplot(data = whitefish_data_mean[201:250,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F145 to F169.5 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  lw6 <- ggplot(data = whitefish_data_mean[251:300,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F170 to F197 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  lw7 <- ggplot(data = whitefish_data_mean[301:350,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F197.5 to F222 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  lw8 <- ggplot(data = whitefish_data_mean[351:400,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F222.5 to F247 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  lw9 <- ggplot(data = whitefish_data_mean[401:426,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F247.5 to F260 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35))  +
+    scale_x_continuous(minor_breaks = waiver())
+
+
+
+```
+
+
+```{r include=FALSE}
+  b1 <- ggplot(data = bass_data_mean[1:50,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F45 to F69.5 (Bass)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+
+  b2 <- ggplot(data = bass_data_mean[51:100,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F70 to F94.5 (Bass)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) +
+    scale_x_continuous(minor_breaks = waiver())
+
+  b3 <- ggplot(data = bass_data_mean[101:150,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F95 to F119.5 (Bass)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  b4 <- ggplot(data = bass_data_mean[151:200,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F120 to F144.5 (Bass)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  b5 <- ggplot(data = bass_data_mean[201:250,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F145 to F169.5 (Bass)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  b6 <- ggplot(data = bass_data_mean[251:300,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F170 to F197 (Bass)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  b7 <- ggplot(data = bass_data_mean[301:350,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F197.5 to F222 (Bass)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  b8 <- ggplot(data = bass_data_mean[351:400,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) + 
+    labs(title = 'F222.5 to F247 (Bass)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+  b9 <- ggplot(data = bass_data_mean[401:426,], aes(x = Frequency, y = Average_Freq)) +
+    geom_point() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+    labs(title = 'F247.5 to F260 (Bass)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+    scale_y_continuous(limits = c(-53, -35)) + 
+    scale_x_continuous(minor_breaks = waiver())
+
+
+```
+
+
+
+```{r echo=FALSE, message=TRUE, warning=TRUE}
+  p1 + lw1 + b1  + plot_annotation(
+    title = "The average reflected sound from emitted pulses F45 to F69.5",
+    caption = "Figure 1: Comparing the reflected sound pulse from each fish between F45 - F69.5",
+    theme = theme_gray(base_family = "", base_size = 11) +
+    theme(
+      plot.caption = element_text(face = "bold", hjust = 0.5)  # Bold and center the caption
+    )
+)
+
+  p2 + lw2 + b2  + plot_annotation(
+    title = "The average reflected sound from emitted pulses F70 to F94.5",
+    caption = "Figure 1: Comparing the reflected sound pulse from each fish between F70 - F94.5",
+    theme = theme_gray(base_family = "", base_size = 11) +
+    theme(
+      plot.caption = element_text(face = "bold", hjust = 0.5)  # Bold and center the caption
+    )
+)
+
+  p3 + lw3 + b3  + plot_annotation(
+    title = "The average reflected sound from emitted pulses F95 to F119.5",
+    caption = "Figure 1: Comparing the reflected sound pulse from each fish between F95 - F119.5",
+    theme = theme_gray(base_family = "", base_size = 11) +
+    theme(
+      plot.caption = element_text(face = "bold", hjust = 0.5)  # Bold and center the caption
+    )
+)
+
+  p4 + lw4 + b4  + plot_annotation(
+    title = "The average reflected sound from emitted pulses F120 to F144.5",
+    caption = "Figure 1: Comparing the reflected sound pulse from each fish between F120 - F144.5",
+    theme = theme_gray(base_family = "", base_size = 11) +
+    theme(
+      plot.caption = element_text(face = "bold", hjust = 0.5)  # Bold and center the caption
+    )
+)
+  
+  p5 + lw5 + b5  + plot_annotation(
+    title = "The average reflected sound from emitted pulses F145 to F169.5",
+    caption = "Figure 1: Comparing the reflected sound pulse from each fish between F145 - F169.5",
+    theme = theme_gray(base_family = "", base_size = 11) +
+    theme(
+      plot.caption = element_text(face = "bold", hjust = 0.5)  # Bold and center the caption
+    )
+)
+
+  p6 + lw6 + b6  + plot_annotation(
+    title = "The average reflected sound from emitted pulses F170 to F197",
+    caption = "Figure 1: Comparing the reflected sound pulse from each fish between F170 - F197",
+    theme = theme_gray(base_family = "", base_size = 11) +
+    theme(
+      plot.caption = element_text(face = "bold", hjust = 0.5)  # Bold and center the caption
+    )
+)
+  
+  p7 + lw7 + b7  + plot_annotation(
+    title = "The average reflected sound from emitted pulses F197.5 to F222",
+    caption = "Figure 1: Comparing the reflected sound pulse from each fish between F197.5 - F222",
+    theme = theme_gray(base_family = "", base_size = 11) +
+    theme(
+      plot.caption = element_text(face = "bold", hjust = 0.5)  # Bold and center the caption
+    )
+)
+  
+  
+
+  p8 + lw8 + b8  + plot_annotation(
+    title = "The average reflected sound from emitted pulses F222.5 to F247",
+    caption = "Figure 1: Comparing the reflected sound pulse from each fish between F22.5 - F247",
+    theme = theme_gray(base_family = "", base_size = 11) +
+    theme(
+      plot.caption = element_text(face = "bold", hjust = 0.5)  # Bold and center the caption
+    )
+)
+
+
+
+  p9 + lw9 + b9  + plot_annotation(
+    title = "The average reflected sound from emitted pulses F247.5 to F260",
+    caption = "Figure 9: Comparing the reflected sound pulse from each fish between F247.5 - F260",
+    theme = theme_gray(base_family = "", base_size = 11) +
+    theme(
+      plot.caption = element_text(face = "bold", hjust = 0.5)  # Bold and center the caption
+    )
+)
+
+```
+
+
+
