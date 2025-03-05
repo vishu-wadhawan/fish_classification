@@ -1,0 +1,78 @@
+---
+title: "t-SNE - Fish Sonar"
+author: "Vishu Wadhawan"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval = FALSE, include = FALSE)
+```
+
+```{r}
+#' First load the data set
+
+  fish_sonar <- read.table("\\Users\\vishu\\OneDrive\\Desktop\\STA 2453\\FishTetherExperiment\\ProcessedData\\processed_AnalysisData.csv", header = TRUE, sep = ",", row.names = NULL)
+  
+  
+#' first lets keep all the features associated with frequencies and remove the rest of the variables
+#' however, we will keep the 'species' column and 'fishnum' so that we can differentiate between individuals fishes
+ 
+  fish_sonar <- fish_sonar[,c(1,5,59:484)]
+  
+#" because this is a classification model, we are assuming that the three fish species are completely independent of   each so lets make three different data sets with each one corresponding to a different fish,
+  
+library(dplyr)
+  
+  trout_data <- fish_sonar %>%
+    filter(species == 'lakeTrout')
+  
+  whitefish_data <- fish_sonar %>%
+    filter(species == 'lakeWhitefish')
+  
+  bass_data <- fish_sonar %>%
+    filter(species == 'smallmouthBass')
+```
+
+
+
+```{r}
+#' we need to remove and entries with missing values 
+
+  trout_data_tsne <- trout_data %>%
+  na.omit() 
+
+  whitefish_data_tsne <- whitefish_data %>%
+  na.omit() 
+  
+  bass_data_tsne <- bass_data %>%
+  na.omit() 
+  
+#' combine all 3 data sets
+  TSNE_data_all_species <- rbind(trout_data_tsne,whitefish_data_tsne,bass_data_tsne)
+  TSNE_data_all_species <- TSNE_data_all_species[,-c(1,2)]
+  TSNE_data_all_species <- as.matrix(TSNE_data_all_species)
+  
+
+```
+
+```{r}
+library(tsne)
+
+#' preform tsne using the @tsne function
+
+  TSNE <- tsne(TSNE_data_all_species, perplexity = 5)
+  colnames(TSNE) = c('x1','x2')
+  
+  
+  df = data.frame(TSNE, label = as.factor(labels))
+  ggplot(df,aes(x1,x2,color = lable)) + 
+  geom_point()+
+  theme(legend.position = 'none')
+  coord_fixed()
+
+```
+
