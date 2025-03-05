@@ -29,7 +29,7 @@ knitr::opts_chunk$set(eval = FALSE, include = FALSE)
 
 
 
-```{r setup, include=FALSE}
+```{r, include=FALSE}
 
 library(dplyr)
   
@@ -44,9 +44,9 @@ library(dplyr)
 ```
 
 
-```{r setup, include=FALSE}
+```{r, include=FALSE}
 
-#' lets calculate the mean for trout data 
+#' lets calculate the average sound response for the trout data set across all the frequencies
   trout_data_mean <- trout_data %>%
     group_by(fishNum) %>%  
     summarise(across(where(is.numeric), ~mean(.x, na.rm = FALSE)))
@@ -60,9 +60,9 @@ library(dplyr)
 ```
 
 
-```{r setup, include=FALSE}
+```{r , include=FALSE}
 
-#' lets calculate the mean for lakewhitefish data 
+#' lets calculate the average sound response for the whitefish data set across all the frequencies
   
   whitefish_data_mean <- whitefish_data %>%
     group_by(fishNum) %>%  
@@ -80,7 +80,8 @@ library(dplyr)
 
 ```{r include=FALSE}
   
-#' lets calculate the mean for bass mouth data
+
+#' lets calculate the average sound response for the bass data set across all the frequencies
 
   bass_data_mean <- bass_data %>%
     group_by(fishNum) %>%  
@@ -96,11 +97,20 @@ library(dplyr)
 
 
 
-```{r setup, include=FALSE}
-#' create 9 plots for trout mean
+```{r , include=FALSE}
+#' create line graphs showing average emitted frequencies (y-axis) vs. Frequency(1 - 426 KHz) (x-axis) from the trout data
+#' p1 shows frequencies 1 to 50 KHz
+#' p2 shows frequencies 51 to 100 KHz
+#' p3 shows frequencies 101 to 150 KHz
+#' p4 shows frequencies 151 to 200 KHz
+#' p5 shows frequencies 201 to 250 KHz
+#' p6 shows frequencies 251 to 300 KHz
+#' p7 shows frequencies 301 to 350 KHz
+#' p8 shows frequencies 251 to 400 KHz
+#' p9 shows frequencies 401 to 450 KHz
 
-  library(ggplot2)
-  library(patchwork)
+library(ggplot2)
+library(patchwork)
 
   p1 <- ggplot(data = trout_data_mean[1:50,], aes(x = Frequency, y = Average_Freq)) +
     geom_point() +
@@ -168,6 +178,18 @@ library(dplyr)
 ```
 
 ```{r include=FALSE}
+
+#' create line graphs showing average emitted frequencies (y-axis) vs. Frequency(1 - 426 KHz) (x-axis) from the whitefish data
+#' l1 shows frequencies 1 to 50 KHz
+#' l2 shows frequencies 51 to 100 KHz
+#' l3 shows frequencies 101 to 150 KHz
+#' l4 shows frequencies 151 to 200 KHz
+#' l5 shows frequencies 201 to 250 KHz
+#' l6 shows frequencies 251 to 300 KHz
+#' l7 shows frequencies 301 to 350 KHz
+#' l8 shows frequencies 251 to 400 KHz
+#' l9 shows frequencies 401 to 450 KHz
+
 
   lw1 <- ggplot(data = whitefish_data_mean[1:50,], aes(x = Frequency, y = Average_Freq)) +
     geom_point() +
@@ -239,6 +261,17 @@ library(dplyr)
 
 
 ```{r include=FALSE}
+#' create line graphs showing average emitted frequencies (y-axis) vs. Frequency(1 - 426 KHz) (x-axis) from the bass data
+#' b1 shows frequencies 1 to 50 KHz
+#' b2 shows frequencies 51 to 100 KHz
+#' b3 shows frequencies 101 to 150 KHz
+#' b4 shows frequencies 151 to 200 KHz
+#' b5 shows frequencies 201 to 250 KHz
+#' b6 shows frequencies 251 to 300 KHz
+#' b7 shows frequencies 301 to 350 KHz
+#' b8 shows frequencies 251 to 400 KHz
+#' b9 shows frequencies 401 to 450 KHz
+
   b1 <- ggplot(data = bass_data_mean[1:50,], aes(x = Frequency, y = Average_Freq)) +
     geom_point() +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
@@ -309,6 +342,10 @@ library(dplyr)
 
 
 ```{r echo=FALSE, message=TRUE, warning=TRUE}
+
+#' here we plot three plots side by side, each plot corresponds to a difference fish but the same frequency range
+
+
   p1 + lw1 + b1  + plot_annotation(
     title = "The average reflected sound from emitted pulses F45 to F69.5",
     caption = "Figure 1: Comparing the reflected sound pulse from each fish between F45 - F69.5",
