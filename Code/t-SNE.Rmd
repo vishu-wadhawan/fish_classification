@@ -73,6 +73,8 @@ library(tsne)
   geom_point()+
   theme(legend.position = 'none')
   coord_fixed()
+  
+#' note this is taking too long to run as of now 
 
 ```
 

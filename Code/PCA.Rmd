@@ -15,89 +15,84 @@ knitr::opts_chunk$set(eval = FALSE, include = FALSE)
 
 
 ```{r}
-#' First load the data set
+#' First load the data set and the libraries
 
-  fish_sonar <- read.table("\\Users\\vishu\\OneDrive\\Desktop\\STA 2453\\FishTetherExperiment\\ProcessedData\\processed_AnalysisData.csv", header = TRUE, sep = ",", row.names = NULL)
-  
-  
-#' first lets keep all the features associated with frequencies and remove the rest of the variables
-#' however, we will keep the 'species' column and 'fishnum' so that we can differentiate between individuals fishes
- 
-  fish_sonar <- fish_sonar[,c(1,5,59:484)]
-  
-#" because this is a classification model, we are assuming that the three fish species are completely independent of   each so lets make three different data sets with each one corresponding to a different fish,
-  
+library(readr)
 library(dplyr)
+library(ggplot2)
+
+fish_sonar <- read.table("C:/Users/vishu/OneDrive/Desktop/STA 2453/FishTetherExperiment/ProcessedData/processed_AnalysisData.csv", header = TRUE, sep = ",")
+
+#' lets keep all the features associated with frequencies and remove the rest of the variables
+#' we will keep the 'species' column and 'fishnum' so that we can differentiate between individuals fishes
+ 
+fish_sonar <- fish_sonar[,c(1,5,59:484)]
   
-  trout_data <- fish_sonar %>%
+#" because this is a classification model, we are assuming that the three fish species are completely independent ofeach so lets make three different data sets with each one corresponding to a different fish,
+  
+trout_data <- fish_sonar %>%
     filter(species == 'lakeTrout')
   
-  whitefish_data <- fish_sonar %>%
+whitefish_data <- fish_sonar %>%
     filter(species == 'lakeWhitefish')
   
-  bass_data <- fish_sonar %>%
+bass_data <- fish_sonar %>%
     filter(species == 'smallmouthBass')
 ```
 
 ```{r}
 #' we need to remove and entries with missing values and then scale the data sets so we can then prepare for PCA
 
-  trout_data_PCA <- trout_data %>%
-  na.omit() 
+trout_data_PCA <- trout_data %>%
+na.omit() 
 
-  whitefish_data_PCA <- whitefish_data %>%
-  na.omit() 
+whitefish_data_PCA <- whitefish_data %>%
+na.omit() 
   
-  bass_data_PCA <- bass_data %>%
-  na.omit() 
+bass_data_PCA <- bass_data %>%
+na.omit() 
   
 #' combine all 3 data sets
-  PCA_data_all_species <- rbind(trout_data_PCA,whitefish_data_PCA,bass_data_PCA)
+PCA_data_all_species <- rbind(trout_data_PCA,whitefish_data_PCA,bass_data_PCA)
   
-
 
 #' preform PCA on the dataset using @ prcomp
   
-  PCA = prcomp(PCA_data_all_species[,-c(1:2)], scale = FALSE)
+PCA = prcomp(PCA_data_all_species[,-c(1:2)], scale = FALSE)
   
 ```
 
 
 ```{r}
-#' output's a dataframe which shows the individual and cumalative proportion of variance explained by each principal    #' component
+#' output's a dataframe which shows the individual and cumulative proportion of variance explained by each principal component
 
-
-
-  summ = summary(PCA)
-  data.frame(summ$importance)
+summ = summary(PCA)
+data.frame(summ$importance)
 ```
 
 ```{r}
-#examine the PC loading for each frequency
+#' examine the PC loading for each frequency
 
-  PCA$rotation
+PCA$rotation
 ```
 
 ```{r}
-#' lets visualize the PC loadings
+#'  visualize the PC loadings using ggplot
 
-  pca_load_visual <- data.frame(
-  loading = c(PCA$rotation[, 1], PCA$rotation[, 2], PCA$rotation[, 3]),  # Combining loadings for PC1, PC2, and PC3
-  threshold = rep(c(1, 2, 3), each = nrow(PCA$rotation)),  # Repeat thresholds for each component
-  Frequency = rep(1:nrow(PCA$rotation), 3)  # Frequency for each feature (1 through the number of features)
+pca_load_visual <- data.frame(
+loading = c(PCA$rotation[, 1], PCA$rotation[, 2], PCA$rotation[, 3]),  
+
+threshold = rep(c(1, 2, 3), each = nrow(PCA$rotation)),  # Repeat thresholds for each component
+Frequency = rep(1:nrow(PCA$rotation), 3)  # Frequency for each feature (1 through the number of features)
 )
 
 
-library(ggplot2)
-
-# Create the ggplot
-  ggplot(pca_load_visual, aes(Frequency, loading)) + 
+#' Create the ggplot
+ggplot(pca_load_visual, aes(Frequency, loading)) + 
     geom_bar(stat = "identity", color = 'orange', fill = 'orange') +  # Bar plot with color
     theme_bw() +  # Use the theme
     theme(legend.position = "none") +  # Remove the legend
     facet_grid(threshold~., labeller = label_both)  # Facet by threshold
-
-  
 
 
 ```
