@@ -1,5 +1,5 @@
 # Classifying Fish Species with Sonar Data
 
-# Introduction
+# Background Information
 
 # Methods
