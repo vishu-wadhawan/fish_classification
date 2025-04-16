@@ -9,6 +9,10 @@
 
 
 # Folder Structure
+
+In order to navigate this repository refer to the folder structure below. 
+
+
 | Folder          | Description | 
 |----------------|----------|
 | Code  | R Scripts for data analysis      | 
