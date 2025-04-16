@@ -1,0 +1,307 @@
+---
+title: "Reproducible_Example"
+author: "Vishu Wadhawan"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+We will examine the Khan data set which consists of a number of tissue samples corresponding to four distinct types of small round blue cell tumors. For each tissue sample (i.e each column), the gene expression measurements are available. This is a prexisting data set in R from the ISLR2 library. It is already split into training and test data. We will thus preform dimensional reduction techniques and classification models with this data set.
+
+```{r}
+#' load libraries
+library(ISLR2)
+library(ggplot2)
+library(caTools)
+library(class)
+library(kernlab)
+library(tidyverse)
+library(dplyr)
+library(leaps)
+library(glmnet)
+library(tree)
+library(randomForest)
+library(caret)
+library(e1071)
+library(ggfortify)
+library(knitr)
+library(partykit)
+library(BART)
+```
+
+
+```{r}
+#' examine the dimensions of the data
+names(Khan)
+unique(Khan$ytest)
+dim(Khan$xtrain)
+length(Khan$ytrain)
+
+Khan$ytrain <- as.factor(Khan$ytrain)
+Khan$ytest <- as.factor(Khan$ytest)
+
+#' combine the training and test data to make one data frame 
+#' rename the column with number to 'Tumor'
+
+df <- data.frame(cbind(Khan$ytrain,Khan$xtrain))
+names(df)[names(df) == "X1"] <- "Tumor"
+names(df)
+df$Tumor <- as.factor(df$Tumor)
+df_matrix <- as.matrix(df)
+
+```
+
+## PCA
+
+
+```{r}
+PCA = prcomp(df[,-1], scale = FALSE, center = TRUE)
+
+#' output's a dataframe which shows the individual and cumulative proportion of variance explained by each principal component
+
+summ = summary(PCA)
+data.frame(summ$importance)
+
+
+#'  visualize the first 3 PC loadings using ggplot
+
+pca_load_visual <- data.frame(
+loading = c(PCA$rotation[, 1], PCA$rotation[, 2], PCA$rotation[, 3]),  
+
+threshold = rep(c(1, 2, 3), each = nrow(PCA$rotation)),  # Repeat thresholds for each component
+Frequency = rep(seq(1,2308,by = 1), 3)  # Frequency for each feature (1 through the number of features)
+
+)
+
+#' Create the ggplot
+ggplot(pca_load_visual, aes(Frequency, loading)) + 
+    geom_bar(stat = "identity", color = 'orange', fill = 'orange') +  # Bar plot with color
+    theme_bw() +  # Use the theme
+    theme(legend.position = "none") +  # Remove the legend
+    facet_grid(threshold~., labeller = label_both)
+
+autoplot(PCA, data = cbind(Khan$xtrain,Khan$ytrain), shape = F, scale = 0, label = FALSE)+
+  geom_point(aes(color = Khan$ytrain),alpha = 0.5)+
+  theme_minimal() + 
+  ggtitle('Comparing PC1 and PC2')
+
+
+```
+
+
+
+
+## Lasso Regression
+
+
+```{r}
+#' shrinkage methods (try lasso)
+
+#' @model.matrix turn the dataframe into a matrix, -1 subtracts the intercept 
+x <- model.matrix(Tumor ~., data = df)[,-1]
+y <- df$Tumor
+
+#set seed for reproducibility
+set.seed(2025)
+
+#' the grid is a range of values that we will need during the cross validation in order to select the best
+#' tuning parameter
+grid <- 10^seq(10,-2,length = 100)
+
+#' 50/50 train test split
+train <- sample(1:nrow(x),nrow(x)/2)
+test <- (-train)
+y.test <- y[test]
+
+#@cv.glment preforms 5-fold cross valdation on the data (lasso regression) and using these we can selecting the best tuning paramter
+
+lasso.mod <- cv.glmnet(x[train,],y[train], alpha = 1, lambda = grid, family = 'multinomial',thresh = 1e-12)
+bestlam <- lasso.mod$lambda.min
+
+#with the optimal lambda we preform lasso regression and train the model
+out <- glmnet(x,y, alpha = 1, lambda = grid, family = 'multinomial')
+
+#' show the coefficients from lass regression
+lasso.coef <- coef(out,s = bestlam)
+
+
+# predict the  classes using the test set 
+y_pred <- predict(out, newx = x[test,], s = bestlam, type = "class")
+tb <- table(y_pred, y.test)
+accuracy <- sum(diag(tb))/length(y.test)
+kable(tb)
+print(c('Accuracy',accuracy))
+
+
+#' examine the coefficients from combine into one data frame 
+#' filter(X1 != 0) filters out the coefficients that were shrunk to 0
+
+df_one <- as.matrix(lasso.coef$'1')
+df_one<- data.frame(df_one)
+df_coef_one <- df_one %>%
+  filter(X1 != 0)
+df_coef_one
+
+df_two <- as.matrix(lasso.coef$'2')
+df_two <- data.frame(df_two)
+df_coef_two <- df_two %>%
+  filter(X1 != 0)
+df_coef_two
+
+df_three <- as.matrix(lasso.coef$'3')
+df_three <- data.frame(df_three)
+df_coef_three <- df_three %>%
+  filter(X1 != 0)
+df_coef_three
+
+df_four <- as.matrix(lasso.coef$'4')
+df_four<- data.frame(df_four)
+df_coef_four <- df_four %>%
+  filter(X1 != 0)
+df_coef_four
+
+df_coef_one$X1 <- rownames(df_coef_one)
+df_coef_two$X1 <- rownames(df_coef_two)
+df_coef_three$X1 <- rownames(df_coef_three)
+df_coef_four$X1 <- rownames(df_coef_four)
+
+
+#merge the three data sets together
+merged_df <- merge(df_coef_one, df_coef_two, by = "X1", all = TRUE)
+
+merged_df <- merge(merged_df,df_coef_three, by = "X1", all = TRUE)
+
+
+merged_df <- merge(merged_df,df_coef_four, by = "X1", all = TRUE)
+
+#see how the coefficients compare, which ones were penalized?
+View(merged_df)
+```
+
+
+
+## Random Forest
+
+```{r}
+
+#' 50/50 training and test split
+y <- df$Tumor
+train <- sample(1:nrow(df),nrow(df)/2)
+test <- (-train)
+y.test <- y[test]
+
+
+# random forest on the training set 
+bag.fish <- randomForest(Tumor~., data = df,  subset = train, importance = TRUE)
+
+# important(bag.fish) shows the mean decrease gini index and the mean decrease accuracy for each of the features
+importance <- data.frame(importance(bag.fish))
+importance$features <- (seq(1,2308,by = 1))
+
+# graph the mean decrease gini index and the mean decrease accuracy for each of the features using varImplot
+varImpPlot(bag.fish)
+
+#visualize the mean decrease gini index across all the frequencies using ggplot
+ggplot(data = importance, mapping = aes(x = features, y = MeanDecreaseGini)) +
+  geom_point()
+
+#only keep the features with a mean decrease gini index greater than 0.15
+filter_importance <- importance %>%
+  filter(MeanDecreaseGini > 0.15)
+filter_importance$Frequency <- rownames(filter_importance)
+
+# create a vector with the names of those features that were filtered
+x <- unlist(filter_importance$Frequency)
+x <- as.vector(x)
+
+#use the model to make predictions with the test set
+p1 <- predict(bag.fish, newdata = df[-train,])
+
+
+# compare the predicted values to the actual values
+confusionMatrix(df$Tumor[-train],p1)
+```
+
+
+## KNN and SVM
+```{r}
+#' K-NNN
+#' note that in this example we would ideally would set k = 4 because there are 4 distinct classes but we did 3 here in order to replicate the results from the report
+
+# 50/50 train test split
+
+split = sample.split(df$Tumor, 
+                     SplitRatio = 0.50)
+train = subset(df, 
+                      split == TRUE)
+test = subset(df, 
+                  split == FALSE)
+train_scaled <- (train[,-1])
+test_scaled <- (test[,-1])
+
+#' preform KNN on the scaled train and test sets
+test_pred <- knn(
+                 train = train_scaled, 
+                 test = test_scaled,
+                 cl = train$Tumor, 
+                 k = 3
+                 )
+# calculate the accuracy using a confusion matrix
+
+actual <- test$Tumor
+confusion_matrix <- table(actual,test_pred)
+kable(confusion_matrix)
+
+accuracy <- sum(diag(confusion_matrix))/length(actual)
+print(c("Accuracy", accuracy*100))
+```
+
+
+```{r}
+#' support vector machine with radial kernel
+#' Use confusion matrices to calculate accuracy
+
+#' apply SVm with Gaussain kernel
+svmfit <- svm(Tumor~., data = train, kernel = 'radial',gamma = 0.5, cost = 10)
+summary(svmfit)
+pred <- table(
+  true = test$Tumor,
+  pred = predict(svmfit,test_scaled)
+)
+kable(pred)
+accuracy <- sum(diag(pred))/length(test$Tumor)
+print(c("Accuracy", accuracy*100))
+
+#' support vector machine with a linear kernel
+svmfit <- svm(Tumor~., data = train, kernel = 'linear',gamma = 0.5, cost = 10)
+summary(svmfit)
+pred <- table(
+  true = test$Tumor,
+  pred = predict(svmfit,test_scaled)
+)
+kable(pred)
+accuracy <- sum(diag(pred))/length(test$Tumor)
+print(c("Accuracy", accuracy*100))
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
