@@ -1,0 +1,624 @@
+---
+title: "More Code"
+author: "Vishu Wadhawan"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+library(ggplot2)
+library(caTools)
+library(class)
+library(kernlab)
+library(tidyverse)
+library(dplyr)
+library(leaps)
+library(glmnet)
+library(tree)
+library(randomForest)
+library(caret)
+library(e1071)
+library(ggfortify)
+library(knitr)
+library(partykit)
+library(BART)
+
+#' load the dataset 
+
+fish_sonar <- read.table("C:/Users/vishu/OneDrive/Desktop/STA 2453/FishTetherExperiment/ProcessedData/processed_AnalysisData.csv", header = TRUE, sep = ",")
+
+```
+
+
+
+# PCA
+```{r}
+
+#' lets keep all the features associated with frequencies and remove the rest of the variables
+#' we will keep the 'species' column and 'fishnum' so that we can differentiate between individuals fishes
+ 
+fish_sonar_reduced <- fish_sonar[,c(1,5,59:484)]
+  
+#" because this is a classification model, we are assuming that the three fish species are completely independent ofeach so lets make three different data sets with each one corresponding to a different fish,
+  
+trout_data <- fish_sonar_reduced %>%
+    filter(species == 'lakeTrout')
+  
+whitefish_data <- fish_sonar_reduced %>%
+    filter(species == 'lakeWhitefish')
+  
+bass_data <- fish_sonar_reduced %>%
+    filter(species == 'smallmouthBass')
+
+#' we need to remove and entries with missing values 
+
+trout_data <- trout_data %>%
+na.omit() 
+
+whitefish_data <- whitefish_data %>%
+na.omit() 
+  
+bass_data <- bass_data %>%
+na.omit() 
+
+
+# sample a random 2000 rows from each of the three data sets using @slice_sample
+set.seed(12345)
+trout_sample <- slice_sample(trout_data,n = 2000)
+whitefish_sample <- slice_sample(whitefish_data,n = 2000)
+bass_sample <- slice_sample(bass_data,n = 2000)
+
+fish_sample_2000 <- rbind(trout_sample,whitefish_sample,bass_sample)
+  
+#' preform PCA on the dataset using @ prcomp
+
+PCA = prcomp(fish_sample_2000[,-c(1:2)], scale = FALSE, center = TRUE)
+
+#' output's a dataframe which shows the individual and cumulative proportion of variance explained by each principal component
+
+summ = summary(PCA)
+data.frame(summ$importance)
+
+
+#'  visualize the first 3 PC loadings using ggplot
+
+pca_load_visual <- data.frame(
+loading = c(PCA$rotation[, 1], PCA$rotation[, 2], PCA$rotation[, 3]),  
+
+threshold = rep(c(1, 2, 3), each = nrow(PCA$rotation)),  # Repeat thresholds for each component
+Frequency = rep(seq(45,257.5,by = 0.5), 3)  # Frequency for each feature (1 through the number of features)
+
+)
+
+
+
+#' Create the ggplot
+ggplot(pca_load_visual, aes(Frequency, loading)) + 
+    geom_bar(stat = "identity", color = 'orange', fill = 'orange') +  # Bar plot with color
+    theme_bw() +  # Use the theme
+    theme(legend.position = "none") +  # Remove the legend
+    facet_grid(threshold~., labeller = label_both)
+
+autoplot(PCA, data = fish_sample_2000, shape = F, scale = 0, label = FALSE)+
+  geom_point(aes(color = species),alpha = 0.5)+
+  theme_minimal() + 
+  ggtitle('Comparing PC1 and PC2')
+
+
+
+
+
+```
+
+
+
+# Examine the Time Series Component
+```{r message=FALSE, warning=FALSE}
+
+#' filter the dataset for the laketrout with ID number LT021
+
+fish_sonar_LT21 <- fish_sonar_reduced %>%
+  filter(species == 'lakeTrout',fishNum == 'LT021') 
+
+x <- seq(1,length(fish_sonar_LT21$F95),by = 1)
+
+#create a plot comparing the signal strength from the F95 Frequency overtime
+
+ggplot(data = fish_sonar_LT21,aes(x=x,y=fish_sonar_LT21$F95)) +
+  geom_line() +
+  xlab('Time') + 
+  ylab('LakeTrout LT021: 95 KHz')
+
+#' filter the data set for the lakeTrout with ID number LT009
+
+fish_sonar_LT9 <- fish_sonar %>%
+  filter(species == 'lakeTrout',fishNum == 'LT009') %>%
+  arrange(Num_targets)
+
+#' use ggplot to examine how the frequency changes as the number of targets increases for LT009
+
+ggplot(data = fish_sonar_LT9,aes(x=Num_targets,y=fish_sonar_LT9$F45)) +
+  geom_point()+
+  geom_smooth(method = "lm", se = TRUE)+  # Add regression line (lm = linear model) 
+  ylab('LakeTrout LT009: 45 KHz')
+  
+
+```
+
+
+# Additional dimension reductionality technqiues
+
+
+## Kernel PCA
+
+```{r}
+#apply kernel PCA
+
+kpca_matrix <- as.matrix(fish_sample_2000[,-c(1:2)])
+kernel <- kpca(t(kpca_matrix), kernel = "rbfdot", kpar = list(sigma = 1), features = 2)
+Xhat <- rotated(kernel)[,1:2]
+df <- data.frame(Xhat)
+colnames(df) <- c('x1','x2')
+
+```
+
+
+
+## Lasso Regression
+
+
+```{r}
+
+#' shrinkage methods (try lasso)
+#' use the sample data set with 2000 fish from each species
+fish_sonar_lasso <- na.omit(fish_sample_2000[,-1])
+fish_sonar_lasso$species <- as.factor(fish_sonar_lasso$species)
+
+
+#' @model.matrix turn the dataframe into a matrix, -1 subtracts the intercept 
+x <- model.matrix(species ~., data = fish_sonar_lasso)[,-1]
+y <- fish_sonar_lasso$species
+
+#set seed for reproducibility
+set.seed(2025)
+
+#' the grid is a range of values that we will need during the cross validation in order to select the best
+#' tuning parameter
+grid <- 10^seq(10,-2,length = 100)
+
+#' 50/50 train test split
+train <- sample(1:nrow(x),nrow(x)/2)
+test <- (-train)
+y.test <- y[test]
+
+#@cv.glment preforms 5-fold cross valdation on the data (lasso regression) and using these we can selecting the best tuning paramter
+lasso.mod <- cv.glmnet(x[train,],y[train], alpha = 1, lambda = grid, family = 'multinomial',thresh = 1e-12)
+bestlam <- lasso.mod$lambda.min
+
+#with the optimal lambda we preform lasso regression and train the model
+out <- glmnet(x,y, alpha = 1, lambda = grid, family = 'multinomial')
+
+#' show the coefficients from lass regression
+lasso.coef <- coef(out,s = bestlam)
+
+
+# predict the species classes using the test set 
+y_pred <- predict(out, newx = x[test,], s = bestlam, type = "class")
+tb <- table(y_pred, y.test)
+accuracy <- sum(diag(tb))/length(y.test)
+kable(tb)
+print(c('Accuracy',accuracy))
+
+
+#' examine the coefficients from each of the three species and combine into one data frame 
+#' filter(X1 != 0) filters out the coefficients that were shrunk to 0
+trout_coef <- as.matrix(lasso.coef$lakeTrout)
+trout_coef <- data.frame(trout_coef)
+trout_coef_df <- trout_coef %>%
+  filter(X1 != 0)
+trout_coef_df
+
+wf_coef <- as.matrix(lasso.coef$lakeWhitefish)
+wf_coef <- data.frame(wf_coef)
+wf_coef_df <- wf_coef %>%
+  filter(X1 != 0)
+wf_coef_df
+
+smb_coef <- as.matrix(lasso.coef$smallmouthBass)
+smb_coef <- data.frame(smb_coef)
+smb_coef_df <- smb_coef %>%
+  filter(X1 != 0)
+smb_coef_df
+
+trout_coef_df$Frequency <- rownames(trout_coef_df)
+wf_coef_df$Frequency <- rownames(wf_coef_df)
+smb_coef_df$Frequency <- rownames(smb_coef_df)
+
+#merge the three data sets together
+merged_df <- merge(trout_coef_df, wf_coef_df, by = "Frequency", all = TRUE)
+
+merged_df <- merge(merged_df,smb_coef_df, by = "Frequency", all = TRUE)
+
+#see how the coefficients compare, which ones were penalized?
+View(merged_df)
+```
+
+
+
+## Random Forest
+
+```{r}
+
+#using the sample data set with 6000 fish
+fish_sonar_rf <- na.omit(fish_sample_2000)[,-1]
+
+#' as.factor lets R know that there are three groups of species
+fish_sonar_rf$species <- as.factor(fish_sonar_rf$species)
+
+#' set seed for reproducibility
+set.seed(2025)
+
+#' 50/50 training and test split
+y <- fish_sonar_rf$species
+train <- sample(1:nrow(fish_sonar_rf),nrow(fish_sonar_rf)/2)
+test <- (-train)
+y.test <- y[test]
+#rownames(fish_sonar_red) <- seq(1,nrow(fish_sonar_red),by = 1)
+
+# random forest on the training set 
+bag.fish <- randomForest(species~., data = fish_sonar_rf,  subset = train, importance = TRUE)
+
+# important(bag.fish) shows the mean decrease gini index and the mean decrease accuracy for each of the features
+importance <- data.frame(importance(bag.fish))
+importance$Frequency <- (seq(45,257.5,by = 0.5))
+
+# graph the mean decrease gini index and the mean decrease accuracy for each of the features using varImplot
+varImpPlot(bag.fish)
+
+#visualize the mean decrease gini index across all the frequencies using ggplot
+ggplot(data = importance, mapping = aes(x = Frequency, y = MeanDecreaseGini)) +
+  geom_point()
+
+#only keep the features with a mean decrease gini index greater than 6
+filter_importance <- importance %>%
+  filter(MeanDecreaseGini > 6)
+filter_importance$Frequency <- rownames(filter_importance)
+
+# create a vector with the names of those features that were filtered
+x <- unlist(filter_importance$Frequency)
+x <- as.vector(x)
+
+#use the model to make predictions with the test set
+p1 <- predict(bag.fish, newdata = fish_sonar_rf[-train,])
+
+
+# compare the predicted values to the actual values
+confusionMatrix(fish_sonar_rf$species[-train],p1)
+```
+
+
+
+# Classification
+
+
+## K-Nearest neighbours 
+
+```{r}
+
+#' create a new sample data set using @slice_sample
+#' again sample a 2000 fish from each species just as before but this should be random in order to prevent leakage
+trout_sample <- slice_sample(trout_data,n = 2000)
+whitefish_sample <- slice_sample(whitefish_data,n = 2000)
+bass_sample <- slice_sample(bass_data,n = 2000)
+
+fish_sample_2000 <- rbind(trout_sample,whitefish_sample,bass_sample)
+
+fish_sonar_rf_predictors <- na.omit(fish_sample_2000)
+
+#' create a new dataframe but only select the features with a mean gini index > 6
+fish_sonar_rf_predictors <- fish_sonar_rf_predictors[,c('species',x)]
+fish_sonar_rf_predictors$species <- as.factor(fish_sonar_rf_predictors$species)
+set.seed(1234)
+
+# 50/50 train test split
+
+split = sample.split(fish_sonar_rf_predictors$species, 
+                     SplitRatio = 0.50)
+train = subset(fish_sonar_rf_predictors, 
+                      split == TRUE)
+test = subset(fish_sonar_rf_predictors, 
+                  split == FALSE)
+train_scaled <- (train[,-1])
+test_scaled <- (test[,-1])
+
+#preform KNN on the scaled train and test sets
+test_pred <- knn(
+                 train = train_scaled, 
+                 test = test_scaled,
+                 cl = train$species, 
+                 k = 3
+                 )
+# calculate the accuracy using a confusion matrix
+
+actual <- test$species
+
+confusion_matrix <- table(actual,test_pred)
+kable(confusion_matrix)
+
+accuracy <- sum(diag(confusion_matrix))/length(actual)
+print(c("Accuracy", accuracy*100))
+```
+
+
+## support vector machine
+
+```{r}
+#' support vector machine with radial kernel
+#' Use confusion matricies to calcualte accuracy
+#' 
+svmfit <- svm(species~., data = train, kernel = 'radial',gamma = 0.5, cost = 10)
+summary(svmfit)
+pred <- table(
+  true = test$species,
+  pred = predict(svmfit,test_scaled)
+)
+kable(pred)
+accuracy <- sum(diag(pred))/length(test$species)
+print(c("Accuracy", accuracy*100))
+
+#' support vector machine with a linear kernel
+svmfit <- svm(species~., data = train, kernel = 'linear',gamma = 0.5, cost = 10)
+summary(svmfit)
+pred <- table(
+  true = test$species,
+  pred = predict(svmfit,test_scaled)
+)
+kable(pred)
+accuracy <- sum(diag(pred))/length(test$species)
+print(c("Accuracy", accuracy*100))
+
+
+```
+
+
+
+## Mean_Gini>8
+
+
+```{r}
+
+
+#only keep the features with a mean decrease gini index greater than 6
+filter_importance <- importance %>%
+  filter(MeanDecreaseGini > 8)
+filter_importance$Frequency <- rownames(filter_importance)
+
+# create a vector with the names of those features that were filtered
+x <- unlist(filter_importance$Frequency)
+x <- as.vector(x)
+
+#' create the new sample data set with 2000 fish from each species randomly selected
+trout_sample <- slice_sample(trout_data,n = 2000)
+whitefish_sample <- slice_sample(whitefish_data,n = 2000)
+bass_sample <- slice_sample(bass_data,n = 2000)
+
+fish_sample_2000 <- rbind(trout_sample,whitefish_sample,bass_sample)
+
+fish_sonar_rf_predictors <- na.omit(fish_sample_2000)
+
+#' choose the predictors with mean gini index > 8
+fish_sonar_rf_predictors <- fish_sonar_rf_predictors[,c('species',x)]
+fish_sonar_rf_predictors$species <- as.factor(fish_sonar_rf_predictors$species)
+set.seed(1234)
+split = sample.split(fish_sonar_rf_predictors$species, 
+                     SplitRatio = 0.50)
+train = subset(fish_sonar_rf_predictors, 
+                      split == TRUE)
+test = subset(fish_sonar_rf_predictors, 
+                  split == FALSE)
+train_scaled <- (train[,-1])
+test_scaled <- (test[,-1])
+test_pred <- knn(
+                 train = train_scaled, 
+                 test = test_scaled,
+                 cl = train$species, 
+                 k = 3
+                 )
+
+#' use a confusion matrix to calculate prediction accuracy
+actual <- test$species
+
+confusion_matrix <- table(actual,test_pred)
+kable(confusion_matrix)
+
+accuracy <- sum(diag(confusion_matrix))/length(actual)
+print(c("Accuracy", accuracy*100))
+
+
+#support vector machine with radial kernel
+svmfit <- svm(species~., data = train, kernel = 'radial',gamma = 0.5, cost = 10)
+summary(svmfit)
+pred <- table(
+  true = test$species,
+  pred = predict(svmfit,test_scaled)
+)
+kable(pred)
+accuracy <- sum(diag(pred))/length(test$species)
+print(c("Accuracy", accuracy*100))
+
+svmfit <- svm(species~., data = train, kernel = 'linear',gamma = 0.5, cost = 10)
+summary(svmfit)
+pred <- table(
+  true = test$species,
+  pred = predict(svmfit,test_scaled)
+)
+kable(pred)
+accuracy <- sum(diag(pred))/length(test$species)
+print(c("Accuracy", accuracy*100))
+
+
+```
+
+
+
+
+
+
+
+## Mean_Gini>10
+```{r}
+#only keep the features with a mean decrease gini index greater than 6
+filter_importance <- importance %>%
+  filter(MeanDecreaseGini > 10)
+filter_importance$Frequency <- rownames(filter_importance)
+
+# create a vector with the names of those features that were filtered
+x <- unlist(filter_importance$Frequency)
+x <- as.vector(x)
+
+
+#' create the new sample data set with 2000 fish from each species randomly selected
+trout_sample <- slice_sample(trout_data,n = 2000)
+whitefish_sample <- slice_sample(whitefish_data,n = 2000)
+bass_sample <- slice_sample(bass_data,n = 2000)
+
+fish_sample_2000 <- rbind(trout_sample,whitefish_sample,bass_sample)
+
+fish_sonar_rf_predictors <- na.omit(fish_sample_2000)
+
+#' choose the predictors with mean gini index > 10
+fish_sonar_rf_predictors <- fish_sonar_rf_predictors[,c('species',x)]
+fish_sonar_rf_predictors$species <- as.factor(fish_sonar_rf_predictors$species)
+set.seed(1234)
+split = sample.split(fish_sonar_rf_predictors$species, 
+                     SplitRatio = 0.50)
+train = subset(fish_sonar_rf_predictors, 
+                      split == TRUE)
+test = subset(fish_sonar_rf_predictors, 
+                  split == FALSE)
+train_scaled <- (train[,-1])
+test_scaled <- (test[,-1])
+test_pred <- knn(
+                 train = train_scaled, 
+                 test = test_scaled,
+                 cl = train$species, 
+                 k = 3
+                 )
+
+#' use a confusion matrix to calculate prediction accuracy
+actual <- test$species
+
+confusion_matrix <- table(actual,test_pred)
+kable(confusion_matrix)
+
+accuracy <- sum(diag(confusion_matrix))/length(actual)
+print(c("Accuracy", accuracy*100))
+
+
+#support vector machine with radial kernel
+svmfit <- svm(species~., data = train, kernel = 'radial',gamma = 0.5, cost = 10)
+summary(svmfit)
+pred <- table(
+  true = test$species,
+  pred = predict(svmfit,test_scaled)
+)
+kable(pred)
+accuracy <- sum(diag(pred))/length(test$species)
+print(c("Accuracy", accuracy*100))
+
+
+#' support vector machine with linear kernel
+svmfit <- svm(species~., data = train, kernel = 'linear',gamma = 0.5, cost = 10)
+summary(svmfit)
+pred <- table(
+  true = test$species,
+  pred = predict(svmfit,test_scaled)
+)
+kable(pred)
+accuracy <- sum(diag(pred))/length(test$species)
+print(c("Accuracy", accuracy*100))
+
+```
+
+
+## Mean_Gini>12
+```{r}
+#only keep the features with a mean decrease gini index greater than 6
+filter_importance <- importance %>%
+  filter(MeanDecreaseGini > 12)
+filter_importance$Frequency <- rownames(filter_importance)
+
+# create a vector with the names of those features that were filtered
+x <- unlist(filter_importance$Frequency)
+x <- as.vector(x)
+
+
+#' create the new sample data set with 2000 fish from each species randomly selected
+trout_sample <- slice_sample(trout_data,n = 2000)
+whitefish_sample <- slice_sample(whitefish_data,n = 2000)
+bass_sample <- slice_sample(bass_data,n = 2000)
+
+fish_sample_2000 <- rbind(trout_sample,whitefish_sample,bass_sample)
+
+fish_sonar_rf_predictors <- na.omit(fish_sample_2000)
+
+
+#' choose the predictors with mean gini index > 12
+fish_sonar_rf_predictors <- fish_sonar_rf_predictors[,c('species',x)]
+fish_sonar_rf_predictors$species <- as.factor(fish_sonar_rf_predictors$species)
+set.seed(1234)
+split = sample.split(fish_sonar_rf_predictors$species, 
+                     SplitRatio = 0.50)
+train = subset(fish_sonar_rf_predictors, 
+                      split == TRUE)
+test = subset(fish_sonar_rf_predictors, 
+                  split == FALSE)
+train_scaled <- (train[,-1])
+test_scaled <- (test[,-1])
+test_pred <- knn(
+                 train = train_scaled, 
+                 test = test_scaled,
+                 cl = train$species, 
+                 k = 3
+                 )
+
+#' use a confusion matrix to calculate prediction accuracy
+actual <- test$species
+
+confusion_matrix <- table(actual,test_pred)
+kable(confusion_matrix)
+
+accuracy <- sum(diag(confusion_matrix))/length(actual)
+print(c("Accuracy", accuracy*100))
+
+
+#' support vector machine with radial kernel
+svmfit <- svm(species~., data = train, kernel = 'radial',gamma = 0.5, cost = 10)
+summary(svmfit)
+pred <- table(
+  true = test$species,
+  pred = predict(svmfit,test_scaled)
+)
+kable(pred)
+accuracy <- sum(diag(pred))/length(test$species)
+print(c("Accuracy", accuracy*100))
+
+#' support vector machine with linear kernel
+svmfit <- svm(species~., data = train, kernel = 'linear',gamma = 0.5, cost = 10)
+summary(svmfit)
+pred <- table(
+  true = test$species,
+  pred = predict(svmfit,test_scaled)
+)
+kable(pred)
+accuracy <- sum(diag(pred))/length(test$species)
+print(c("Accuracy", accuracy*100))
+
+```
+
+

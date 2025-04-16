@@ -24,38 +24,42 @@ knitr::opts_chunk$set(eval = FALSE, include = FALSE)
  
   fish_sonar <- fish_sonar[,c(1,5,59:484)]
   
-#" because this is a classification model, we are assuming that the three fish species are completely independent of each so lets make three different data sets with each one corresponding to a different fish,
+
 ```
 
 
 
 ```{r, include=FALSE}
-
+#' load the libraries
 library(dplyr)
+library(ggplot2)
+library(patchwork)
+
+#' because this is a classification model, we are assuming that the three fish species are completely independent of each so lets make three different data sets with each one corresponding to a different fish
   
-  trout_data <- fish_sonar %>%
-    filter(species == 'lakeTrout')
+trout_data <- fish_sonar %>%
+  filter(species == 'lakeTrout')
   
-  whitefish_data <- fish_sonar %>%
-    filter(species == 'lakeWhitefish')
+whitefish_data <- fish_sonar %>%
+  filter(species == 'lakeWhitefish')
   
-  bass_data <- fish_sonar %>%
-    filter(species == 'smallmouthBass')
+bass_data <- fish_sonar %>%
+  filter(species == 'smallmouthBass')
 ```
 
 
 ```{r, include=FALSE}
 
 #' lets calculate the average sound response for the trout data set across all the frequencies
-  trout_data_mean <- trout_data %>%
-    group_by(fishNum) %>%  
-    summarise(across(where(is.numeric), ~mean(.x, na.rm = FALSE)))
+trout_data_mean <- trout_data %>%
+  group_by(fishNum) %>%  
+  summarise(across(where(is.numeric), ~mean(.x, na.rm = FALSE)))
   
-  trout_data_mean <-trout_data_mean[,-c(1)]
-  trout_data_mean <- data.frame((t(trout_data_mean)))
+trout_data_mean <-trout_data_mean[,-c(1)]
+trout_data_mean <- data.frame((t(trout_data_mean)))
   
-  trout_data_mean$Average_Freq <- rowMeans((trout_data_mean), na.rm = TRUE)
-  trout_data_mean$Frequency <- c(seq(45,170,by = 0.5),seq(173,260,by=0.5))
+trout_data_mean$Average_Freq <- rowMeans((trout_data_mean), na.rm = TRUE)
+trout_data_mean$Frequency <- c(seq(45,170,by = 0.5),seq(173,260,by=0.5))
   
 ```
 
@@ -64,15 +68,15 @@ library(dplyr)
 
 #' lets calculate the average sound response for the whitefish data set across all the frequencies
   
-  whitefish_data_mean <- whitefish_data %>%
-    group_by(fishNum) %>%  
-    summarise(across(where(is.numeric), ~mean(.x, na.rm = FALSE)))
+whitefish_data_mean <- whitefish_data %>%
+  group_by(fishNum) %>%  
+  summarise(across(where(is.numeric), ~mean(.x, na.rm = FALSE)))
   
-  whitefish_data_mean <- whitefish_data_mean[,-c(1)]
-  whitefish_data_mean <- data.frame((t(whitefish_data_mean)))
+whitefish_data_mean <- whitefish_data_mean[,-c(1)]
+whitefish_data_mean <- data.frame((t(whitefish_data_mean)))
   
-  whitefish_data_mean$Average_Freq <- rowMeans((whitefish_data_mean), na.rm = TRUE)
-  whitefish_data_mean$Frequency <- c(seq(45,170,by = 0.5),seq(173,260,by=0.5))
+whitefish_data_mean$Average_Freq <- rowMeans((whitefish_data_mean), na.rm = TRUE)
+whitefish_data_mean$Frequency <- c(seq(45,170,by = 0.5),seq(173,260,by=0.5))
 
 ```
 
@@ -83,15 +87,15 @@ library(dplyr)
 
 #' lets calculate the average sound response for the bass data set across all the frequencies
 
-  bass_data_mean <- bass_data %>%
-    group_by(fishNum) %>%  
-    summarise(across(where(is.numeric), ~mean(.x, na.rm = FALSE)))
+bass_data_mean <- bass_data %>%
+  group_by(fishNum) %>%  
+  summarise(across(where(is.numeric), ~mean(.x, na.rm = FALSE)))
   
-  bass_data_mean <- bass_data_mean[,-c(1)]
-  bass_data_mean <- data.frame((t(bass_data_mean)))
+bass_data_mean <- bass_data_mean[,-c(1)]
+bass_data_mean <- data.frame((t(bass_data_mean)))
   
-  bass_data_mean$Average_Freq <- rowMeans((bass_data_mean), na.rm = TRUE)
-  bass_data_mean$Frequency <- c(seq(45,170,by = 0.5),seq(173,260,by=0.5))
+bass_data_mean$Average_Freq <- rowMeans((bass_data_mean), na.rm = TRUE)
+bass_data_mean$Frequency <- c(seq(45,170,by = 0.5),seq(173,260,by=0.5))
   
 ```
 
@@ -109,71 +113,69 @@ library(dplyr)
 #' p8 shows frequencies 251 to 400 KHz
 #' p9 shows frequencies 401 to 450 KHz
 
-library(ggplot2)
-library(patchwork)
 
-  p1 <- ggplot(data = trout_data_mean[1:50,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F45 to F69.5 (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+p1 <- ggplot(data = trout_data_mean[1:50,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F45 to F69.5 (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  p2 <- ggplot(data = trout_data_mean[51:100,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F70 to F94.5  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+p2 <- ggplot(data = trout_data_mean[51:100,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F70 to F94.5  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  p3 <- ggplot(data = trout_data_mean[101:150,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F95 to F119.5  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+p3 <- ggplot(data = trout_data_mean[101:150,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F95 to F119.5  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  p4 <- ggplot(data = trout_data_mean[151:200,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F120 to F144.5  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+p4 <- ggplot(data = trout_data_mean[151:200,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F120 to F144.5  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  p5 <- ggplot(data = trout_data_mean[201:250,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F145 to F169.5  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+p5 <- ggplot(data = trout_data_mean[201:250,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F145 to F169.5  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  p6 <- ggplot(data = trout_data_mean[251:300,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F170 to F197  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+p6 <- ggplot(data = trout_data_mean[251:300,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F170 to F197  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  p7 <- ggplot(data = trout_data_mean[301:350,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F197.5 to F222  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+p7 <- ggplot(data = trout_data_mean[301:350,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F197.5 to F222  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  p8 <- ggplot(data = trout_data_mean[351:400,], aes(x = Frequency, y = Average_Freq)) +
+p8 <- ggplot(data = trout_data_mean[351:400,], aes(x = Frequency, y = Average_Freq)) +
   geom_point() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size =7)) + 
   labs(title = 'F222.5 to F247  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  p9 <- ggplot(data = trout_data_mean[401:426,], aes(x = Frequency, y = Average_Freq)) +
+p9 <- ggplot(data = trout_data_mean[401:426,], aes(x = Frequency, y = Average_Freq)) +
   geom_point() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
   labs(title = 'F247.5 to F260  (Trout)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
 ```
 
@@ -191,69 +193,69 @@ library(patchwork)
 #' l9 shows frequencies 401 to 450 KHz
 
 
-  lw1 <- ggplot(data = whitefish_data_mean[1:50,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F45 to F69.5 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+lw1 <- ggplot(data = whitefish_data_mean[1:50,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F45 to F69.5 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
 
-  lw2 <- ggplot(data = whitefish_data_mean[51:100,], aes(x = Frequency, y = Average_Freq)) +
+lw2 <- ggplot(data = whitefish_data_mean[51:100,], aes(x = Frequency, y = Average_Freq)) +
   geom_point() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
   labs(title = 'F70 to F94.5 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  lw3 <- ggplot(data = whitefish_data_mean[101:150,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F95 to F119.5 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+lw3 <- ggplot(data = whitefish_data_mean[101:150,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F95 to F119.5 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  lw4 <- ggplot(data = whitefish_data_mean[151:200,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F120 to F144.5 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+lw4 <- ggplot(data = whitefish_data_mean[151:200,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F120 to F144.5 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  lw5 <- ggplot(data = whitefish_data_mean[201:250,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F145 to F169.5 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+lw5 <- ggplot(data = whitefish_data_mean[201:250,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F145 to F169.5 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  lw6 <- ggplot(data = whitefish_data_mean[251:300,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F170 to F197 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+lw6 <- ggplot(data = whitefish_data_mean[251:300,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F170 to F197 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  lw7 <- ggplot(data = whitefish_data_mean[301:350,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F197.5 to F222 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+lw7 <- ggplot(data = whitefish_data_mean[301:350,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F197.5 to F222 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  lw8 <- ggplot(data = whitefish_data_mean[351:400,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F222.5 to F247 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35)) + 
-    scale_x_continuous(minor_breaks = waiver())
+lw8 <- ggplot(data = whitefish_data_mean[351:400,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F222.5 to F247 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35)) + 
+  scale_x_continuous(minor_breaks = waiver())
 
-  lw9 <- ggplot(data = whitefish_data_mean[401:426,], aes(x = Frequency, y = Average_Freq)) +
-    geom_point() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
-    labs(title = 'F247.5 to F260 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
-    scale_y_continuous(limits = c(-53, -35))  +
-    scale_x_continuous(minor_breaks = waiver())
+lw9 <- ggplot(data = whitefish_data_mean[401:426,], aes(x = Frequency, y = Average_Freq)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 7)) + 
+  labs(title = 'F247.5 to F260 (Whitefish)',x = 'Emitted Frequency',y = 'Sound Reflected (db)') +
+  scale_y_continuous(limits = c(-53, -35))  +
+  scale_x_continuous(minor_breaks = waiver())
 
 
 
