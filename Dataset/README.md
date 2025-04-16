@@ -1,1 +1,0 @@
-# This folder contains the csv. file of the processed data used for this project. For the original data set with raw acoustic data the link is [here](https://github.com/WidebandPingFest/FishTetherExperiment/tree/main)
