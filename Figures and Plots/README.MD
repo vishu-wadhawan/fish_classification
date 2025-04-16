@@ -1,1 +1,1 @@
-# This file contains PDF and PNG files of the visualization shown in the final report.
+# This file contains PDF and PNG files of the graphical visualizations shown in the final report.
