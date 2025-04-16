@@ -20,7 +20,7 @@
 
 # Project Description
 
-This project aim to build classification model that identifys trout, whitefish, and bass based on sonar signal strength. It also seeks to pinpoint the key features that influence the model’s predictions and uncover the underlying relationships between sonar frequencies and fish. 
+This project aims to build classification model that identifys trout, whitefish, and bass based on sonar signal strength. It also seeks to pinpoint the key features that influence the model’s predictions and uncover the underlying relationships between sonar frequencies and fish. 
 
 
 
