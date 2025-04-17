@@ -16,10 +16,10 @@ In order to navigate this repository refer to the folder structure below.
 | Folder          | Description | 
 |----------------|----------|
 | Code  | R Scripts for data analysis      | 
-| Dataset |  Contains data about signal strenght and frequencies   |
-| Exploratory Data Analysis | Preliminary data processing and visualization      | 
+| Dataset |  Contains data about signal strength and frequencies   |
+| Exploratory Data Analysis | Preliminary data processing and visualizations      | 
 | Figures and Plots         | Contains files of the graphical summaries from the final report    | 
-| Written Reports | Contains pdf versions of all the reports |
+| Written Reports | Contains pdf versions of all reports |
 
 
 # Project Description
