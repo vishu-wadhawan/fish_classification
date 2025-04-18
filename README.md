@@ -4,9 +4,7 @@
 
 **Email:** vishuwadhawan@gmail.com, vishu.wadhawan@utoronto.ca
 
-**University of Toronto**
-
-**Department of Statistical Sciences**
+**University of Toronto**, **Department of Statistical Sciences**
 
 # Folder Structure
 
