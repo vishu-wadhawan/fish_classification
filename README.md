@@ -37,7 +37,7 @@ The github repository with the original raw acousitc data can be found [Here](ht
 More information about variable description can be accessed at this [link](https://support.echoview.com/WebHelp/_Introduction/About_Echoview.htm)
 
 # Data Wrangling
-First download the [dataset](https://github.com/vishu-wadhawan/fish_classification/blob/main/Dataset/processed_AnalysisData.csv). For the analysis, only keep the frequencies emitted by the sonar instrument as features (from 45 KHz to 259.6 Khz). This reduced the dataset from 484 features to 425. Next, remove all the missing values from the data, this reduces the number of observations down to 10333. The data set should now have 4101 trout, 2736 bass, and 3496 whitefish.
+First download the dataset from [here]{https://github.com/vishu-wadhawan/fish_classification/tree/main}. For the analysis, only keep the frequencies emitted by the sonar instrument as features (from 45 KHz to 259.6 Khz). This reduced the dataset from 484 features to 425. Next, remove all the missing values from the data, this reduces the number of observations down to 10333. The data set should now have 4101 trout, 2736 bass, and 3496 whitefish.
 
 # Methods
 
