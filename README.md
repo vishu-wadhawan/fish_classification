@@ -1,12 +1,12 @@
 # Classifying Fish Species with Sonar Data
 
-**Vishu Wadhawan**
+**Author:** **Vishu Wadhawan**
+
+**Email:** vishuwadhawan@gmail.com, vishu.wadhawan@utoronto.ca
 
 **University of Toronto**
 
-
 **Department of Statistical Sciences**
-
 
 # Folder Structure
 
