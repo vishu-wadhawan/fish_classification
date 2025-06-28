@@ -2,7 +2,7 @@
 
 **Author:** **Vishu Wadhawan**
 
-**Email:** vishuwadhawan@gmail.com, vishu.wadhawan@utoronto.ca
+**Email:** vishuwadhawan5@gmail.com, vishu.wadhawan@utoronto.ca
 
 **University of Toronto**, **Department of Statistical Sciences**
 
